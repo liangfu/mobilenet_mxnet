@@ -109,6 +109,7 @@ from collections import namedtuple
 import functools
 
 import tensorflow as tf
+from tensorflow.python.ops import nn
 
 slim = tf.contrib.slim
 
@@ -230,6 +231,7 @@ def mobilenet_v1_base(inputs,
                             stride=conv_def.stride,
                             normalizer_fn=slim.batch_norm,
                             scope=end_point)
+
           end_points[end_point] = net
           if end_point == final_endpoint:
             return net, end_points

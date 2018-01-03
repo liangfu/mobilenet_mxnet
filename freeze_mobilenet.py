@@ -7,6 +7,7 @@ from os import path as osp
 from os import stat, makedirs
 import argparse
 
+from pprint import pprint
 from shutil import copyfile
 import tarfile
 import json
@@ -19,28 +20,8 @@ from tensorflow.python.framework import graph_util
 parser = argparse.ArgumentParser(
     description='Convert released MobileNetV1 models to frozen .pb format.',
 )
-# parser.add_argument('tf_models_dir',
-#                     type=str,
-#                     default=None,
-#                     help=('The directory created by running '
-#                           '`git clone '
-#                           'https://github.com/tensorflow/models.git`.'
-#                           ),
-# )
 args = parser.parse_args()
 
-# if args.tf_models_dir is None:
-#   print(':(')
-#   exit()
-# else:
-#   slim_dir = osp.join(
-#       args.tf_models_dir,
-#       'research',
-#       'slim',
-#   )
-#   syspath.append(slim_dir)
-
-# From tensorflow/models/slim
 import mobilenet_v1
 import imagenet
 
@@ -105,6 +86,7 @@ def freeze_mobilenet(meta_file, img_size=224, factor=1.0, num_classes=1001):
   output_node_names = "output"
 
   rest_var = slim.get_variables_to_restore()
+  pprint(rest_var)
 
   with tf.Session() as sess:
     graph = tf.get_default_graph()
@@ -125,11 +107,12 @@ def freeze_mobilenet(meta_file, img_size=224, factor=1.0, num_classes=1001):
     with tf.gfile.GFile(output_graph_fn, "wb") as f:
         f.write(output_graph_def.SerializeToString())
     print("{} ops in the final graph.".format(len(output_graph_def.node)))
-
+    saver.export_meta_graph(ckpt_file+'.meta')
+    print("Final graph exported to checkpoint meta file {}.".format(ckpt_file+'.meta'))
 
 # factors = ['0.25', '0.50', '0.75', '1.0']
 # img_sizes = [128, 160, 192, 224]
-factors = ['0.25', '0.50', '0.75', '1.0']
+factors = ['0.25']
 img_sizes = [224,]
 
 base_url = 'http://download.tensorflow.org/models/'
