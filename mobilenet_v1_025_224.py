@@ -3,97 +3,100 @@ import numpy as np
 import math
 from pprint import pprint
 import json
+import time
 
 # mxnet-cpu only support channel first, default convert the model and weight as channel first
 
+eps = 0.001
+
 def RefactorModel():
 
-    input           = mx.sym.var('input')
-    Conv2d_0_Conv2D_pad = mx.sym.pad(data = input, mode = 'constant', pad_width=(0, 0, 0, 0, 0L, 1L, 0L, 1L), constant_value = 0.0, name = 'MobilenetV1/MobilenetV1/Conv2d_0/Conv2D_pad')
-    Conv2d_0_Conv2D = mx.sym.Convolution(data=Conv2d_0_Conv2D_pad, kernel=(3L, 3L), stride=(2L, 2L), dilate = (), num_filter = 8, num_group = 1, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_0/Conv2D')
-    Conv2d_0_BatchNorm = mx.sym.BatchNorm(data = Conv2d_0_Conv2D, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_0/BatchNorm/FusedBatchNorm')
+    data           = mx.sym.var('input')
+    # Conv2d_0_Conv2D_pad = mx.sym.pad(data = input, mode = 'constant', pad_width=(0, 0, 0, 0, 1L, 1L, 1L, 1L), constant_value = 0.0, name = 'MobilenetV1/MobilenetV1/Conv2d_0/Conv2D_pad')
+    Conv2d_0_Conv2D = mx.sym.Convolution(data=data, kernel=(3L, 3L), stride=(2L, 2L), dilate = (), pad=(1L, 1L), num_filter = 8, num_group = 1, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_0/Conv2D')
+    Conv2d_0_BatchNorm = mx.sym.BatchNorm(data = Conv2d_0_Conv2D, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_0/BatchNorm/FusedBatchNorm')
     Conv2d_0_Relu6 = mx.sym.Activation(data = Conv2d_0_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_0/Relu6')
     Conv2d_1_depthwise_depthwise = mx.sym.Convolution(data=Conv2d_0_Relu6, kernel=(3L, 3L), stride=(1L, 1L), dilate = (), pad=(1L, 1L), num_filter = 8, num_group = 8, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_1_depthwise/depthwise')
-    Conv2d_1_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_1_depthwise_depthwise, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_1_depthwise/BatchNorm/FusedBatchNorm')
+    Conv2d_1_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_1_depthwise_depthwise, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_1_depthwise/BatchNorm/FusedBatchNorm')
     Conv2d_1_depthwise_Relu6 = mx.sym.Activation(data = Conv2d_1_depthwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_1_depthwise/Relu6')
     Conv2d_1_pointwise_Conv2D = mx.sym.Convolution(data=Conv2d_1_depthwise_Relu6, kernel=(1L, 1L), stride=(1L, 1L), dilate = (), pad=(0L, 0L), num_filter = 16, num_group = 1, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_1_pointwise/Conv2D')
-    Conv2d_1_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_1_pointwise_Conv2D, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_1_pointwise/BatchNorm/FusedBatchNorm')
+    Conv2d_1_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_1_pointwise_Conv2D, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_1_pointwise/BatchNorm/FusedBatchNorm')
     Conv2d_1_pointwise_Relu6 = mx.sym.Activation(data = Conv2d_1_pointwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_1_pointwise/Relu6')
-    Conv2d_2_depthwise_depthwise_pad = mx.sym.pad(data = Conv2d_1_pointwise_Relu6, mode = 'constant', pad_width=(0, 0, 0, 0, 0L, 1L, 0L, 1L), constant_value = 0.0, name = 'MobilenetV1/MobilenetV1/Conv2d_2_depthwise/depthwise_pad')
+    Conv2d_2_depthwise_depthwise_pad = mx.sym.pad(data = Conv2d_1_pointwise_Relu6, mode = 'constant', pad_width=(0, 0, 0, 0, 1L, 1L, 1L, 1L), constant_value = 0.0, name = 'MobilenetV1/MobilenetV1/Conv2d_2_depthwise/depthwise_pad')
     Conv2d_2_depthwise_depthwise = mx.sym.Convolution(data=Conv2d_2_depthwise_depthwise_pad, kernel=(3L, 3L), stride=(2L, 2L), dilate = (), num_filter = 16, num_group = 16, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_2_depthwise/depthwise')
-    Conv2d_2_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_2_depthwise_depthwise, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_2_depthwise/BatchNorm/FusedBatchNorm')
+    Conv2d_2_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_2_depthwise_depthwise, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_2_depthwise/BatchNorm/FusedBatchNorm')
     Conv2d_2_depthwise_Relu6 = mx.sym.Activation(data = Conv2d_2_depthwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_2_depthwise/Relu6')
     Conv2d_2_pointwise_Conv2D = mx.sym.Convolution(data=Conv2d_2_depthwise_Relu6, kernel=(1L, 1L), stride=(1L, 1L), dilate = (), pad=(0L, 0L), num_filter = 32, num_group = 1, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_2_pointwise/Conv2D')
-    Conv2d_2_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_2_pointwise_Conv2D, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_2_pointwise/BatchNorm/FusedBatchNorm')
+    Conv2d_2_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_2_pointwise_Conv2D, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_2_pointwise/BatchNorm/FusedBatchNorm')
     Conv2d_2_pointwise_Relu6 = mx.sym.Activation(data = Conv2d_2_pointwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_2_pointwise/Relu6')
     Conv2d_3_depthwise_depthwise = mx.sym.Convolution(data=Conv2d_2_pointwise_Relu6, kernel=(3L, 3L), stride=(1L, 1L), dilate = (), pad=(1L, 1L), num_filter = 32, num_group = 32, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_3_depthwise/depthwise')
-    Conv2d_3_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_3_depthwise_depthwise, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_3_depthwise/BatchNorm/FusedBatchNorm')
+    Conv2d_3_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_3_depthwise_depthwise, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_3_depthwise/BatchNorm/FusedBatchNorm')
     Conv2d_3_depthwise_Relu6 = mx.sym.Activation(data = Conv2d_3_depthwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_3_depthwise/Relu6')
     Conv2d_3_pointwise_Conv2D = mx.sym.Convolution(data=Conv2d_3_depthwise_Relu6, kernel=(1L, 1L), stride=(1L, 1L), dilate = (), pad=(0L, 0L), num_filter = 32, num_group = 1, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_3_pointwise/Conv2D')
-    Conv2d_3_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_3_pointwise_Conv2D, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_3_pointwise/BatchNorm/FusedBatchNorm')
+    Conv2d_3_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_3_pointwise_Conv2D, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_3_pointwise/BatchNorm/FusedBatchNorm')
     Conv2d_3_pointwise_Relu6 = mx.sym.Activation(data = Conv2d_3_pointwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_3_pointwise/Relu6')
-    Conv2d_4_depthwise_depthwise_pad = mx.sym.pad(data = Conv2d_3_pointwise_Relu6, mode = 'constant', pad_width=(0, 0, 0, 0, 0L, 1L, 0L, 1L), constant_value = 0.0, name = 'MobilenetV1/MobilenetV1/Conv2d_4_depthwise/depthwise_pad')
+    Conv2d_4_depthwise_depthwise_pad = mx.sym.pad(data = Conv2d_3_pointwise_Relu6, mode = 'constant', pad_width=(0, 0, 0, 0, 1L, 1L, 1L, 1L), constant_value = 0.0, name = 'MobilenetV1/MobilenetV1/Conv2d_4_depthwise/depthwise_pad')
     Conv2d_4_depthwise_depthwise = mx.sym.Convolution(data=Conv2d_4_depthwise_depthwise_pad, kernel=(3L, 3L), stride=(2L, 2L), dilate = (), num_filter = 32, num_group = 32, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_4_depthwise/depthwise')
-    Conv2d_4_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_4_depthwise_depthwise, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_4_depthwise/BatchNorm/FusedBatchNorm')
+    Conv2d_4_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_4_depthwise_depthwise, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_4_depthwise/BatchNorm/FusedBatchNorm')
     Conv2d_4_depthwise_Relu6 = mx.sym.Activation(data = Conv2d_4_depthwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_4_depthwise/Relu6')
     Conv2d_4_pointwise_Conv2D = mx.sym.Convolution(data=Conv2d_4_depthwise_Relu6, kernel=(1L, 1L), stride=(1L, 1L), dilate = (), pad=(0L, 0L), num_filter = 64, num_group = 1, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_4_pointwise/Conv2D')
-    Conv2d_4_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_4_pointwise_Conv2D, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_4_pointwise/BatchNorm/FusedBatchNorm')
+    Conv2d_4_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_4_pointwise_Conv2D, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_4_pointwise/BatchNorm/FusedBatchNorm')
     Conv2d_4_pointwise_Relu6 = mx.sym.Activation(data = Conv2d_4_pointwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_4_pointwise/Relu6')
     Conv2d_5_depthwise_depthwise = mx.sym.Convolution(data=Conv2d_4_pointwise_Relu6, kernel=(3L, 3L), stride=(1L, 1L), dilate = (), pad=(1L, 1L), num_filter = 64, num_group = 64, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_5_depthwise/depthwise')
-    Conv2d_5_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_5_depthwise_depthwise, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_5_depthwise/BatchNorm/FusedBatchNorm')
+    Conv2d_5_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_5_depthwise_depthwise, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_5_depthwise/BatchNorm/FusedBatchNorm')
     Conv2d_5_depthwise_Relu6 = mx.sym.Activation(data = Conv2d_5_depthwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_5_depthwise/Relu6')
     Conv2d_5_pointwise_Conv2D = mx.sym.Convolution(data=Conv2d_5_depthwise_Relu6, kernel=(1L, 1L), stride=(1L, 1L), dilate = (), pad=(0L, 0L), num_filter = 64, num_group = 1, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_5_pointwise/Conv2D')
-    Conv2d_5_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_5_pointwise_Conv2D, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_5_pointwise/BatchNorm/FusedBatchNorm')
+    Conv2d_5_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_5_pointwise_Conv2D, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_5_pointwise/BatchNorm/FusedBatchNorm')
     Conv2d_5_pointwise_Relu6 = mx.sym.Activation(data = Conv2d_5_pointwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_5_pointwise/Relu6')
-    Conv2d_6_depthwise_depthwise_pad = mx.sym.pad(data = Conv2d_5_pointwise_Relu6, mode = 'constant', pad_width=(0, 0, 0, 0, 0L, 1L, 0L, 1L), constant_value = 0.0, name = 'MobilenetV1/MobilenetV1/Conv2d_6_depthwise/depthwise_pad')
+    Conv2d_6_depthwise_depthwise_pad = mx.sym.pad(data = Conv2d_5_pointwise_Relu6, mode = 'constant', pad_width=(0, 0, 0, 0, 1L, 1L, 1L, 1L), constant_value = 0.0, name = 'MobilenetV1/MobilenetV1/Conv2d_6_depthwise/depthwise_pad')
     Conv2d_6_depthwise_depthwise = mx.sym.Convolution(data=Conv2d_6_depthwise_depthwise_pad, kernel=(3L, 3L), stride=(2L, 2L), dilate = (), num_filter = 64, num_group = 64, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_6_depthwise/depthwise')
-    Conv2d_6_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_6_depthwise_depthwise, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_6_depthwise/BatchNorm/FusedBatchNorm')
+    Conv2d_6_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_6_depthwise_depthwise, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_6_depthwise/BatchNorm/FusedBatchNorm')
     Conv2d_6_depthwise_Relu6 = mx.sym.Activation(data = Conv2d_6_depthwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_6_depthwise/Relu6')
     Conv2d_6_pointwise_Conv2D = mx.sym.Convolution(data=Conv2d_6_depthwise_Relu6, kernel=(1L, 1L), stride=(1L, 1L), dilate = (), pad=(0L, 0L), num_filter = 128, num_group = 1, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_6_pointwise/Conv2D')
-    Conv2d_6_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_6_pointwise_Conv2D, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_6_pointwise/BatchNorm/FusedBatchNorm')
+    Conv2d_6_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_6_pointwise_Conv2D, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_6_pointwise/BatchNorm/FusedBatchNorm')
     Conv2d_6_pointwise_Relu6 = mx.sym.Activation(data = Conv2d_6_pointwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_6_pointwise/Relu6')
     Conv2d_7_depthwise_depthwise = mx.sym.Convolution(data=Conv2d_6_pointwise_Relu6, kernel=(3L, 3L), stride=(1L, 1L), dilate = (), pad=(1L, 1L), num_filter = 128, num_group = 128, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_7_depthwise/depthwise')
-    Conv2d_7_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_7_depthwise_depthwise, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_7_depthwise/BatchNorm/FusedBatchNorm')
+    Conv2d_7_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_7_depthwise_depthwise, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_7_depthwise/BatchNorm/FusedBatchNorm')
     Conv2d_7_depthwise_Relu6 = mx.sym.Activation(data = Conv2d_7_depthwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_7_depthwise/Relu6')
     Conv2d_7_pointwise_Conv2D = mx.sym.Convolution(data=Conv2d_7_depthwise_Relu6, kernel=(1L, 1L), stride=(1L, 1L), dilate = (), pad=(0L, 0L), num_filter = 128, num_group = 1, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_7_pointwise/Conv2D')
-    Conv2d_7_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_7_pointwise_Conv2D, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_7_pointwise/BatchNorm/FusedBatchNorm')
+    Conv2d_7_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_7_pointwise_Conv2D, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_7_pointwise/BatchNorm/FusedBatchNorm')
     Conv2d_7_pointwise_Relu6 = mx.sym.Activation(data = Conv2d_7_pointwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_7_pointwise/Relu6')
     Conv2d_8_depthwise_depthwise = mx.sym.Convolution(data=Conv2d_7_pointwise_Relu6, kernel=(3L, 3L), stride=(1L, 1L), dilate = (), pad=(1L, 1L), num_filter = 128, num_group = 128, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_8_depthwise/depthwise')
-    Conv2d_8_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_8_depthwise_depthwise, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_8_depthwise/BatchNorm/FusedBatchNorm')
+    Conv2d_8_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_8_depthwise_depthwise, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_8_depthwise/BatchNorm/FusedBatchNorm')
     Conv2d_8_depthwise_Relu6 = mx.sym.Activation(data = Conv2d_8_depthwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_8_depthwise/Relu6')
     Conv2d_8_pointwise_Conv2D = mx.sym.Convolution(data=Conv2d_8_depthwise_Relu6, kernel=(1L, 1L), stride=(1L, 1L), dilate = (), pad=(0L, 0L), num_filter = 128, num_group = 1, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_8_pointwise/Conv2D')
-    Conv2d_8_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_8_pointwise_Conv2D, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_8_pointwise/BatchNorm/FusedBatchNorm')
+    Conv2d_8_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_8_pointwise_Conv2D, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_8_pointwise/BatchNorm/FusedBatchNorm')
     Conv2d_8_pointwise_Relu6 = mx.sym.Activation(data = Conv2d_8_pointwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_8_pointwise/Relu6')
     Conv2d_9_depthwise_depthwise = mx.sym.Convolution(data=Conv2d_8_pointwise_Relu6, kernel=(3L, 3L), stride=(1L, 1L), dilate = (), pad=(1L, 1L), num_filter = 128, num_group = 128, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_9_depthwise/depthwise')
-    Conv2d_9_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_9_depthwise_depthwise, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_9_depthwise/BatchNorm/FusedBatchNorm')
+    Conv2d_9_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_9_depthwise_depthwise, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_9_depthwise/BatchNorm/FusedBatchNorm')
     Conv2d_9_depthwise_Relu6 = mx.sym.Activation(data = Conv2d_9_depthwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_9_depthwise/Relu6')
     Conv2d_9_pointwise_Conv2D = mx.sym.Convolution(data=Conv2d_9_depthwise_Relu6, kernel=(1L, 1L), stride=(1L, 1L), dilate = (), pad=(0L, 0L), num_filter = 128, num_group = 1, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_9_pointwise/Conv2D')
-    Conv2d_9_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_9_pointwise_Conv2D, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_9_pointwise/BatchNorm/FusedBatchNorm')
+    Conv2d_9_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_9_pointwise_Conv2D, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_9_pointwise/BatchNorm/FusedBatchNorm')
     Conv2d_9_pointwise_Relu6 = mx.sym.Activation(data = Conv2d_9_pointwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_9_pointwise/Relu6')
     Conv2d_10_depthwise_depthwise = mx.sym.Convolution(data=Conv2d_9_pointwise_Relu6, kernel=(3L, 3L), stride=(1L, 1L), dilate = (), pad=(1L, 1L), num_filter = 128, num_group = 128, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_10_depthwise/depthwise')
-    Conv2d_10_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_10_depthwise_depthwise, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_10_depthwise/BatchNorm/FusedBatchNorm')
+    Conv2d_10_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_10_depthwise_depthwise, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_10_depthwise/BatchNorm/FusedBatchNorm')
     Conv2d_10_depthwise_Relu6 = mx.sym.Activation(data = Conv2d_10_depthwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_10_depthwise/Relu6')
     Conv2d_10_pointwise_Conv2D = mx.sym.Convolution(data=Conv2d_10_depthwise_Relu6, kernel=(1L, 1L), stride=(1L, 1L), dilate = (), pad=(0L, 0L), num_filter = 128, num_group = 1, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_10_pointwise/Conv2D')
-    Conv2d_10_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_10_pointwise_Conv2D, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_10_pointwise/BatchNorm/FusedBatchNorm')
+    Conv2d_10_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_10_pointwise_Conv2D, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_10_pointwise/BatchNorm/FusedBatchNorm')
     Conv2d_10_pointwise_Relu6 = mx.sym.Activation(data = Conv2d_10_pointwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_10_pointwise/Relu6')
     Conv2d_11_depthwise_depthwise = mx.sym.Convolution(data=Conv2d_10_pointwise_Relu6, kernel=(3L, 3L), stride=(1L, 1L), dilate = (), pad=(1L, 1L), num_filter = 128, num_group = 128, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_11_depthwise/depthwise')
-    Conv2d_11_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_11_depthwise_depthwise, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_11_depthwise/BatchNorm/FusedBatchNorm')
+    Conv2d_11_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_11_depthwise_depthwise, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_11_depthwise/BatchNorm/FusedBatchNorm')
     Conv2d_11_depthwise_Relu6 = mx.sym.Activation(data = Conv2d_11_depthwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_11_depthwise/Relu6')
     Conv2d_11_pointwise_Conv2D = mx.sym.Convolution(data=Conv2d_11_depthwise_Relu6, kernel=(1L, 1L), stride=(1L, 1L), dilate = (), pad=(0L, 0L), num_filter = 128, num_group = 1, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_11_pointwise/Conv2D')
-    Conv2d_11_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_11_pointwise_Conv2D, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_11_pointwise/BatchNorm/FusedBatchNorm')
+    Conv2d_11_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_11_pointwise_Conv2D, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_11_pointwise/BatchNorm/FusedBatchNorm')
     Conv2d_11_pointwise_Relu6 = mx.sym.Activation(data = Conv2d_11_pointwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_11_pointwise/Relu6')
-    Conv2d_12_depthwise_depthwise_pad = mx.sym.pad(data = Conv2d_11_pointwise_Relu6, mode = 'constant', pad_width=(0, 0, 0, 0, 0L, 1L, 0L, 1L), constant_value = 0.0, name = 'MobilenetV1/MobilenetV1/Conv2d_12_depthwise/depthwise_pad')
+    Conv2d_12_depthwise_depthwise_pad = mx.sym.pad(data = Conv2d_11_pointwise_Relu6, mode = 'constant', pad_width=(0, 0, 0, 0, 1L, 1L, 1L, 1L), constant_value = 0.0, name = 'MobilenetV1/MobilenetV1/Conv2d_12_depthwise/depthwise_pad')
     Conv2d_12_depthwise_depthwise = mx.sym.Convolution(data=Conv2d_12_depthwise_depthwise_pad, kernel=(3L, 3L), stride=(2L, 2L), dilate = (), num_filter = 128, num_group = 128, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_12_depthwise/depthwise')
-    Conv2d_12_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_12_depthwise_depthwise, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_12_depthwise/BatchNorm/FusedBatchNorm')
+    Conv2d_12_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_12_depthwise_depthwise, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_12_depthwise/BatchNorm/FusedBatchNorm')
     Conv2d_12_depthwise_Relu6 = mx.sym.Activation(data = Conv2d_12_depthwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_12_depthwise/Relu6')
     Conv2d_12_pointwise_Conv2D = mx.sym.Convolution(data=Conv2d_12_depthwise_Relu6, kernel=(1L, 1L), stride=(1L, 1L), dilate = (), pad=(0L, 0L), num_filter = 256, num_group = 1, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_12_pointwise/Conv2D')
-    Conv2d_12_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_12_pointwise_Conv2D, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_12_pointwise/BatchNorm/FusedBatchNorm')
+    Conv2d_12_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_12_pointwise_Conv2D, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_12_pointwise/BatchNorm/FusedBatchNorm')
     Conv2d_12_pointwise_Relu6 = mx.sym.Activation(data = Conv2d_12_pointwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_12_pointwise/Relu6')
     Conv2d_13_depthwise_depthwise = mx.sym.Convolution(data=Conv2d_12_pointwise_Relu6, kernel=(3L, 3L), stride=(1L, 1L), dilate = (), pad=(1L, 1L), num_filter = 256, num_group = 256, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_13_depthwise/depthwise')
-    Conv2d_13_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_13_depthwise_depthwise, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_13_depthwise/BatchNorm/FusedBatchNorm')
+    Conv2d_13_depthwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_13_depthwise_depthwise, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_13_depthwise/BatchNorm/FusedBatchNorm')
     Conv2d_13_depthwise_Relu6 = mx.sym.Activation(data = Conv2d_13_depthwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_13_depthwise/Relu6')
     Conv2d_13_pointwise_Conv2D = mx.sym.Convolution(data=Conv2d_13_depthwise_Relu6, kernel=(1L, 1L), stride=(1L, 1L), dilate = (), pad=(0L, 0L), num_filter = 256, num_group = 1, no_bias = True, layout = 'NCHW', name = 'MobilenetV1/MobilenetV1/Conv2d_13_pointwise/Conv2D')
-    Conv2d_13_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_13_pointwise_Conv2D, axis = 1, eps = 0.0010000000475, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_13_pointwise/BatchNorm/FusedBatchNorm')
+    Conv2d_13_pointwise_BatchNorm = mx.sym.BatchNorm(data = Conv2d_13_pointwise_Conv2D, axis = 1, eps = eps, momentum = 0.0, fix_gamma = False, use_global_stats = False, name = 'MobilenetV1/MobilenetV1/Conv2d_13_pointwise/BatchNorm/FusedBatchNorm')
     Conv2d_13_pointwise_Relu6 = mx.sym.Activation(data = Conv2d_13_pointwise_BatchNorm, act_type = 'relu', name = 'MobilenetV1/MobilenetV1/Conv2d_13_pointwise/Relu6')
     Logits_AvgPool_1a_AvgPool = mx.sym.Pooling(data = Conv2d_13_pointwise_Relu6, global_pool = False, kernel=(7L, 7L), pool_type = 'avg', stride=(2L, 2L), pad=(0L, 0L), name = 'MobilenetV1/Logits/AvgPool_1a/AvgPool')
     Logits_Conv2d_1c_1x1_Conv2D = mx.sym.Convolution(data=Logits_AvgPool_1a_AvgPool, kernel=(1L, 1L), stride=(1L, 1L), dilate = (), pad=(0L, 0L), num_filter = 1001, num_group = 1, no_bias = False, layout = 'NCHW', name = 'MobilenetV1/Logits/Conv2d_1c_1x1/Conv2D')
@@ -126,13 +129,10 @@ def deploy_weight(model, weight_file):
         else:
             arg_params[weight_name] = mx.nd.array(weight_data)
             
-
     model.bind(for_training = False, data_shapes = [('input', (1, 3, 224, 224))])
-
     executor = model._exec_group.execs[0]
-    pprint(dict(map(lambda item: (item[0],item[1].shape), executor.arg_dict.items())))
-    
-    model.set_params(arg_params = arg_params, aux_params = aux_params, allow_missing = True)
+    # pprint(dict(map(lambda item: (item[0],item[1].shape), executor.arg_dict.items())))
+    model.set_params(arg_params = arg_params, aux_params = aux_params, allow_missing = False)
 
     return model
 
@@ -163,15 +163,40 @@ def get_image(fname, show = False):
 def predict(model, labels, fname):
     # to show the image, change the argument show into True
     img = get_image(fname, show = False)
+
+    def stat_helper(name, array):
+        """wrapper for executor callback"""
+        import ctypes
+        from mxnet.ndarray import NDArray
+        from mxnet.base import NDArrayHandle, py_str
+        array = ctypes.cast(array, NDArrayHandle)
+        if True:
+            array = NDArray(array, writable=False).asnumpy()
+            print (name, array.shape, np.mean(array), np.std(array),
+                   ('%.1fms' % (float(time.time()-stat_helper.start_time)*1000)))
+        else:
+            array = NDArray(array, writable=False)
+            array.wait_to_read()
+            elapsed = float(time.time()-stat_helper.start_time)*1000.
+            print (name, array.shape, ('%.1fms' % (elapsed,)))
+        # stat_helper.start_time=time.time()
+    stat_helper.start_time=float(time.time())
+    executor = model._exec_group.execs[0]
+    executor.set_monitor_callback(stat_helper)
+
     # compute the predict probabilities
     model.forward(Batch([mx.nd.array(img)]))
     prob = model.get_outputs()[0].asnumpy()
+
+    elapsed = float(time.time()-stat_helper.start_time)*1000.
+    print('time elapsed: %.1fms' % (elapsed,))
+    
     # print the top-5
     prob = np.squeeze(prob)
     a = np.argsort(prob)[::-1]
     with open("MobileNet/labels.json") as fp:
         label2name = json.load(fp)
-    print(label2name)
+    # print(label2name)
     for i in a[0:5]:
         print('prbability = %f, class = %s, name = %s' %(prob[i], labels[i], label2name[str(i)]))
 
