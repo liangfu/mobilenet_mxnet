@@ -8,4 +8,5 @@
 
 ### convert IR to mxnet checkpoint files
 # python MMdnn/mmdnn/conversion/examples/mxnet/imagenet_test.py -n mobilenet_v1_025_224 -w IR/mobilenet_v1_0.25_224-0000.params --dump IR/mobilenet_v1_0.25_224
+# python mobilenet_v1_025_224.py
 
