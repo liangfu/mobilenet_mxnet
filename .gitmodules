@@ -1,3 +1,0 @@
-[submodule "MMdnn"]
-	path = MMdnn
-	url = git@github.com:liangfu/MMdnn.git
